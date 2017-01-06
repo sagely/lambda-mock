@@ -1,0 +1,17 @@
+{
+  "name": "lambda-mock",
+  "description": "Mock server for AWS Lambda testing",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:TeamPraxis/lambda-mock.git"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "1.14.1",
+    "express": "4.13.3",
+    "nconf": "0.8.2"
+  }
+}
