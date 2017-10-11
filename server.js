@@ -3,6 +3,7 @@
 var express = require('express'),
     http = require('http'),
     nconf = require('nconf');
+var childProcess = require('child_process');
 
 nconf.argv().env();
 
@@ -10,32 +11,43 @@ var app = express();
 
 app.use(require('body-parser').json({limit: '5mb', type: function () { return true; }}));
 
+var child = {};
 app.use(function (req, res) {
-  try {
-    var fn = decodeURIComponent(req.url.split('/')[3]).split('.');
-    var lambda = require('../' + fn[0]);
-    var handler = lambda[fn[1] || 'handler'];
+  var fn = decodeURIComponent(req.url.split('/')[3]).split('.');
+  var name = fn[0].replace('/build/package', '');
 
-    console.log(fn[0] + ': [start]');
-    handler(req.body, {
-      succeed: function (result) {
-        console.log(fn[0] + ': [succeed]');
-        res.status(200).json(result);
-      },
-      fail: function (result) {
-        console.log(fn[0] + ': [fail]');
-        try {
-          res.append('X-Amz-Function-Error', 'Handled');
-          res.status(200).json({ errorMessage: result });
-        } catch (e) {
-          console.log('exception sending result', e);
-        }
+  // Only create a child once, just keep using it
+  if (!child[fn[0]]) {
+    console.log(name +': [loading]');
+    child[fn[0]] = childProcess.fork("./child.js");
+    child[fn[0]].on('message', function (msg) {
+      if (msg.code === 500 && !msg.result) {
+        console.log(name + ': [error]   ' + (req.url) + ' ' + msg.errorMessage);
+        console.log(msg.stack);
+        child[fn[0]][msg.id].status(500).json({ errorMessage: 'Could not load lambda' });
+      } else if (msg.code === 500) {
+        console.log(name + ': [fail]   ' + (req.body.requestType || '') + ' ' + (req.body.type || 'Unknown mime'));
+        child[fn[0]][msg.id].status(200).json({ errorMessage: msg.result });
+      } else if (msg.result) {
+        console.log(name + ': [succeed]   ' + (req.body.requestType || '') + ' ' + (req.body.type || 'Unknown mime'));
+        child[fn[0]][msg.id].status(200).json(msg.result);
+      } else {
+        console.log(name + ': [error]   ' + (req.url) + ' ', msg);
+        child[fn[0]][msg.id].status(500).json({ errorMessage: 'Bad Fork' });
       }
+      delete child[fn[0]][msg.id];
     });
-  } catch (e) {
-    res.append('X-Amz-Function-Error', 'Unhandled');
-    res.status(200).json({ errorMessage: e.message + '\n' + e.stack });
   }
+
+  // Call the child process to do our work
+  var id = Math.floor((Math.random() * 100000) + 1);
+  child[fn[0]][id] = res;
+  child[fn[0]].send({
+    id: id,
+    func: fn[0],
+    handler: fn[1] || 'handler',
+    body: req.body
+  });
 });
 
 var server = http.createServer(app);
