@@ -26,7 +26,15 @@ app.use(function (req, res) {
         console.log(msg.stack);
         child[fn[0]][msg.id].res.status(500).json({ errorMessage: 'Could not load lambda' });
       } else if (msg.code === 500) {
-        console.log(name + ': [fail]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
+        var err;
+        try {
+          err = JSON.parse(msg.result);
+        } catch (e) { }
+        if (err.message) {
+          console.log(name + ': [fail]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime') + ' (' + err.message + ')');
+        } else {
+          console.log(name + ': [fail]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
+        }
         child[fn[0]][msg.id].res.status(200).json({ errorMessage: msg.result });
       } else if (msg.result) {
         console.log(name + ': [succeed]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
