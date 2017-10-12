@@ -17,7 +17,7 @@ app.use(function (req, res) {
   var name = fn[0].replace('/build/package', '');
 
   // Only create a child once, just keep using it
-  if (!child[fn[0]]) {
+  if (!child[fn[0]] || !child[fn[0]].connected || child[fn[0]].killed) {
     console.log(name +': [loading]');
     child[fn[0]] = childProcess.fork("./child.js");
     child[fn[0]].on('message', function (msg) {
@@ -54,4 +54,22 @@ var server = http.createServer(app);
 var port = nconf.get('port') || 9777;
 server.listen(port, function () {
   console.log('Lambda mock server listening on port ' + port);
+});
+
+
+var stdin = process.openStdin();
+process.stdin.setRawMode = true;
+stdin.resume();
+
+stdin.on( 'data', function( key ){
+  // ctrl-c
+  if ( key === '\u0003' ) {
+    process.exit();
+  } else {
+
+    console.log('Resetting...');
+    Object.keys(child).map(function (key) {
+      child[key].disconnect();
+    });
+  }
 });
