@@ -22,26 +22,30 @@ app.use(function (req, res) {
     child[fn[0]] = childProcess.fork("./child.js");
     child[fn[0]].on('message', function (msg) {
       if (msg.code === 500 && !msg.result) {
-        console.log(name + ': [error]   ' + (req.url) + ' ' + msg.errorMessage);
+        console.log(name + ': [error]   ' + (child[fn[0]][msg.id].req.url) + ' ' + msg.errorMessage);
         console.log(msg.stack);
-        child[fn[0]][msg.id].status(500).json({ errorMessage: 'Could not load lambda' });
+        child[fn[0]][msg.id].res.status(500).json({ errorMessage: 'Could not load lambda' });
       } else if (msg.code === 500) {
-        console.log(name + ': [fail]   ' + (req.body.requestType || '') + ' ' + (req.body.type || 'Unknown mime'));
-        child[fn[0]][msg.id].status(200).json({ errorMessage: msg.result });
+        console.log(name + ': [fail]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
+        child[fn[0]][msg.id].res.status(200).json({ errorMessage: msg.result });
       } else if (msg.result) {
-        console.log(name + ': [succeed]   ' + (req.body.requestType || '') + ' ' + (req.body.type || 'Unknown mime'));
-        child[fn[0]][msg.id].status(200).json(msg.result);
+        console.log(name + ': [succeed]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
+        child[fn[0]][msg.id].res.status(200).json(msg.result);
       } else {
-        console.log(name + ': [error]   ' + (req.url) + ' ', msg);
-        child[fn[0]][msg.id].status(500).json({ errorMessage: 'Bad Fork' });
+        console.log(name + ': [error]   ' + (child[fn[0]][msg.id].req.url) + ' ', msg);
+        child[fn[0]][msg.id].res.status(500).json({ errorMessage: 'Bad Fork' });
       }
-      delete child[fn[0]][msg.id];
+      delete child[fn[0]][msg.id].res;
+      delete child[fn[0]][msg.id].req;
     });
   }
 
   // Call the child process to do our work
   var id = Math.floor((Math.random() * 100000) + 1);
-  child[fn[0]][id] = res;
+  child[fn[0]][id] = {
+    res: res,
+    req: req
+  };
   child[fn[0]].send({
     id: id,
     func: fn[0],
