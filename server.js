@@ -35,6 +35,7 @@ app.use(function (req, res) {
         } else {
           console.log(name + ': [fail]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
         }
+        res.append('X-Amz-Function-Error', 'Handled');
         child[fn[0]][msg.id].res.status(200).json({ errorMessage: msg.result });
       } else if (msg.result) {
         console.log(name + ': [succeed]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
