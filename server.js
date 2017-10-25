@@ -12,6 +12,8 @@ var app = express();
 app.use(require('body-parser').json({limit: '5mb', type: function () { return true; }}));
 
 var child = {};
+var finished = {};
+
 app.use(function (req, res) {
   var fn = decodeURIComponent(req.url.split('/')[3]).split('.');
   var name = fn[0].replace('/build/package', '');
@@ -21,6 +23,17 @@ app.use(function (req, res) {
     console.log(name +': [loading]');
     child[fn[0]] = childProcess.fork("./child.js");
     child[fn[0]].on('message', function (msg) {
+      if (finished[fn[0]][msg.id]) {
+        console.log(name + ': [dup]     Response already sent.');
+        return;
+      }
+      finished[fn[0]][msg.id] = true;
+
+      if (!child[fn[0]][msg.id].req || !child[fn[0]][msg.id].res) {
+        console.log(name + ': [error]   req or res not valid. (' + msg.errorMessage + ')');
+        return;
+      }
+
       if (msg.code === 500 && !msg.result) {
         console.log(name + ': [error]   ' + (child[fn[0]][msg.id].req.url) + ' ' + msg.errorMessage);
         console.log(msg.stack);
@@ -51,6 +64,11 @@ app.use(function (req, res) {
 
   // Call the child process to do our work
   var id = Math.floor((Math.random() * 100000) + 1);
+  if (!finished[fn[0]]) {
+    finished[fn[0]] = {};
+  }
+  finished[fn[0]][id] = false;
+
   child[fn[0]][id] = {
     res: res,
     req: req
