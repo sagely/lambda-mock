@@ -24,20 +24,32 @@ process.on('message', function(msg) {
 
     var handler = lambda[msg.handler || 'handler'];
     var sent = false;
+
+    var succeed = function (result) {
+      if (!sent) {
+        sent = true;
+        process.send({ id: msg.id, code: 200, result: result });
+      }
+      return;
+    };
+
+    var fail = function (result) {
+      if (!sent) {
+        sent = true;
+        process.send({ id: msg.id, code: 500, result: result });
+      }
+      return;
+    };
+
     handler(msg.body, {
-      succeed: function (result) {
-        if (!sent) {
-          sent = true;
-          process.send({ id: msg.id, code: 200, result: result });
-        }
-        return;
-      },
-      fail: function (result) {
-        if (!sent) {
-          sent = true;
-          process.send({ id: msg.id, code: 500, result: result });
-        }
-        return;
+      succeed: succeed,
+      fail: fail
+    }, function (err, result) {
+      if (err) {
+        fail(err);
+      }
+      else {
+        succeed(result);
       }
     });
   } else {
