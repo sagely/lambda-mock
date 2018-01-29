@@ -42,6 +42,9 @@ process.on('message', function(msg) {
     };
 
     handler(msg.body, {
+      getRemainingTimeInMillis: function () {
+        return 0;
+      },
       succeed: succeed,
       fail: fail
     }, function (err, result) {
