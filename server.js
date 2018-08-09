@@ -43,10 +43,10 @@ app.use(function (req, res) {
         try {
           err = JSON.parse(msg.result);
         } catch (e) { }
-        if (err.message) {
+        if (err && err.message) {
           console.log(name + ': [fail]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime') + ' (' + err.message + ')');
         } else {
-          console.log(name + ': [fail]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
+          console.log(name + ': [fail]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime') + ' (' + msg + ')');
         }
         child[fn[0]][msg.id].res.append('X-Amz-Function-Error', 'Handled');
         child[fn[0]][msg.id].res.status(200).json({ errorMessage: msg.result });
