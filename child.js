@@ -41,7 +41,7 @@ process.on('message', function(msg) {
       return;
     };
 
-    handler(msg.body, {
+    var promise = handler(msg.body, {
       getRemainingTimeInMillis: function () {
         return 0;
       },
@@ -55,6 +55,13 @@ process.on('message', function(msg) {
         succeed(result);
       }
     });
+    if (promise) {
+      promise.then(function (result) {
+        succeed(result);
+      }).catch(function (err) {
+        fail(err);
+      });
+    }
   } else {
     process.send({ id: msg.id, code: 500, errorMessage: 'Could not load lambda', msg: msg });
     return;
