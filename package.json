@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "body-parser": "1.14.1",
-    "express": "4.13.3",
+    "express": "4.18.2",
     "nconf": "0.8.2"
   }
 }
