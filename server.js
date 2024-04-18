@@ -35,7 +35,7 @@ app.use(function (req, res) {
       }
 
       if (msg.code === 500 && !msg.result) {
-        console.log(name + ': [error]   ' + (child[fn[0]][msg.id].req.url) + ' ' + msg.errorMessage);
+        console.log(name + ': [error A]   ' + (child[fn[0]][msg.id].req.url) + ' ' + msg.errorMessage);
         console.log(msg.stack);
         child[fn[0]][msg.id].res.status(500).json({ errorMessage: 'Could not load lambda' });
       } else if (msg.code === 500) {
@@ -54,7 +54,7 @@ app.use(function (req, res) {
         console.log(name + ': [succeed]   ' + (child[fn[0]][msg.id].req.body.requestType || '') + ' ' + (child[fn[0]][msg.id].req.body.type || 'Unknown mime'));
         child[fn[0]][msg.id].res.status(200).json(msg.result);
       } else {
-        console.log(name + ': [error]   ' + (child[fn[0]][msg.id].req.url) + ' ', msg);
+        console.log(name + ': [error B]   ' + (child[fn[0]][msg.id].req.url) + ' ', msg);
         child[fn[0]][msg.id].res.status(500).json({ errorMessage: 'Bad Fork' });
       }
       delete child[fn[0]][msg.id].res;
